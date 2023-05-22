@@ -20,14 +20,53 @@ sbox:	.byte	99,124,119,123,-14,107,111,-59,48,1,103,43,-2,-41,-85,118
 
 .section	.text
 keyMixing:
+	xorq %rax, %rax
+	xorq %r9, %r9
+	
+	movq (%rdi), %rax # input is %rdi
+	movq (%rsi), %r9 # key is %rsi 
+	xorq %r9, %rax # xor with key
+	movq %rax, (%rdi) # save xor result
+
+	movq 8(%rdi), %rax
+	movq 8(%rsi), %r9
+	xorq %r9, %rax
+	movq %rax, 8(%rdi)
 	ret
 
 
 byteSubstitution:
+	xor %rax, %rax
+	xor %rcx, %rcx
+	xor %r10, %r10
+	movq $16, %rcx
+	lea sbox(%rip), %r9 # r9 is the address of sbox
+_byte_sub_loop:
+	movb (%rdi), %al
+	movb (%r9, %rax), %al
+	movb %al, (%rdi)
+	leaq 1(%rdi), %rdi
+	loop _byte_sub_loop
 	ret
 
 
 shiftRows:
+	xor %rax, %rax
+	
+# row 1
+	movl 4(%rdi), %eax
+	rorl $8, %eax
+	movl %eax, 4(%rdi)
+
+# row 2
+	movl 8(%rdi), %eax
+	rorl $16, %eax
+	movl %eax, 8(%rdi)
+
+# row 3
+	movl 12(%rdi), %eax
+	rorl $24, %eax
+	movl %eax, 12(%rdi)
 	ret
 
 
