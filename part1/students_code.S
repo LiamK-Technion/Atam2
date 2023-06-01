@@ -69,6 +69,88 @@ shiftRows:
 	movl %eax, 12(%rdi)
 	ret
 
-
+# rdi = input, rsi = key, rdx = len
 cipher:
+	xor %rcx, %rcx # rcx is the counter of the loop_block, need to run len times
+_loop_block: # do len times
+	pushq %rdi
+	pushq %rsi
+	pushq %rcx
+	call keyMixing # inupt -> rdi, key -> rsi
+	popq %rcx
+	popq %rsi
+	popq %rdi
+	movq $0, %r15 # r15 is counter for loop_cipher, to run the loop 9 times
+	jmp _loop_cipher
+
+_finish_loop_cipher:
+	pushq %rdi
+	pushq %rcx
+	call byteSubstitution # input -> rdi
+	popq %rcx
+	popq %rdi
+
+	pushq %rdi
+	pushq %rcx
+	call shiftRows # input -> rdi
+	popq %rcx
+	popq %rdi
+
+	pushq %rdi
+	pushq %rsi
+	pushq %rcx
+	call keyMixing # inupt -> rdi, key -> rsi
+	popq %rcx
+	popq %rsi
+	popq %rdi
+
+	inc %rcx
+	leaq 16(%rdi), %rdi
+	cmp %rdx, %rcx
+	jne _loop_block
+	je _finish
+
+
+	
+_loop_cipher:
+	
+	# do key-mixing on key
+	# do 9 times: byte-sub, shift-rows, mix-col, key-mix
+	pushq %rdi
+	pushq %rcx
+	call byteSubstitution # input -> rdi
+	popq %rcx
+	popq %rdi
+
+	pushq %rdi
+	pushq %rcx
+	call shiftRows # input -> rdi
+	popq %rcx
+	popq %rdi
+
+	pushq %rdi
+	pushq %rcx
+	pushq %rsi
+	pushq %rdx
+	call mixColumns # input -> rdi
+	popq %rdx
+	popq %rsi
+	popq %rcx
+	popq %rdi
+
+	pushq %rdi
+	pushq %rsi
+	pushq %rcx
+	call keyMixing # inupt -> rdi, key -> rsi
+	popq %rcx
+	popq %rsi
+	popq %rdi
+_came_back:
+	inc %r15
+	cmpq $9, %r15
+	jne _loop_cipher
+	je _finish_loop_cipher
+
+
+_finish:
 	ret
