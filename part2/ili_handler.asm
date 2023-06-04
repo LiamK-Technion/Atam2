@@ -27,14 +27,14 @@ my_ili_handler:
   xorq %rcx, %rcx
   movq 120(%rsp), %rbx
   movq (%rbx), %rbx
-  cmpb 0x0f, %bl
+  cmpb $0x0f, %bl
   je _two_bytes_opcode
   # if not jumped, only one byte opcode
   movq %rbx, %rdi
   call what_to_do
   cmpq $0, %rax
   je _original
-  jne _continue_handler
+  jne _continue_handler_one_byte
 
 _two_bytes_opcode:
   movb %bh, %cl
@@ -42,7 +42,7 @@ _two_bytes_opcode:
   call what_to_do
   cmpq $0, %rax
   je _original
-  jne _continue_handler
+  jne _continue_handler_two_byte
 
 
 _original:
@@ -65,7 +65,29 @@ _original:
   jmp * old_ili_handler
   jmp _finish_handler
 
-_continue_handler:
+_continue_handler_one_byte:
+  movq %rax, %rdi
+  popq %rsp
+  popq %rbp
+  popq %rsi
+  popq %r15
+  popq %r14
+  popq %r13
+  popq %r12
+  popq %r11
+  popq %r10
+  popq %r9
+  popq %r8
+  popq %rdx
+  popq %rcx
+  popq %rbx
+  popq %rax
+
+  # update rip to point to the next instruction
+  addq $1, (%rsp)
+  jmp _finish_handler
+
+_continue_handler_two_byte:
   movq %rax, %rdi
   popq %rsp
   popq %rbp
